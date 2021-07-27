@@ -3,6 +3,13 @@ uuid = "4b517573-bcc2-4361-873f-800fd2a7bff3"
 authors = ["Eduard Stan"]
 version = "0.1.0"
 
+[deps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+NSGAII = "0faa7b20-5579-4646-b419-11e3eab23b57"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
 [compat]
 julia = "1"
 
