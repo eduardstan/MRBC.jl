@@ -63,7 +63,7 @@ function R̃ₓ(rel::AbstractIntervalRelation,
     end
 end
 
-global H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()
+# global H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()
 
 function mc(I::ModalInstance, φ::ClassificationRule; minh::Int=1, maxh::Int=4, horizon::Int=4, memo::Bool=false)
     if !memo
@@ -576,7 +576,7 @@ function init()
     init_relations  = [exIntRel(:G),univIntRel(:G)]
     prop_relations  = [conjunction, implication]
     relations       = vcat(ex_relations, univ_relations,prop_relations)
-    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=5,minnumrules=15,maxnumrules=45)
+    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=5,minnumrules=4,maxnumrules=12)
 end
 
 function hypervolume_indicator(y::Vector{Tuple{Float64,Float64}}; refpoint=(0,0))
