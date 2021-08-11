@@ -345,9 +345,9 @@ function paa(x::AbstractArray{T} where T <: Real;
         f::Function=mean,
         decdigits::Int=4,
         kwargs...)
-    if ismissing(n_chunks) return x
+    N = length(x)
+    if ismissing(n_chunks) || n_chunks ≥ N return x
     else
-        N = length(x)
         @assert 0 ≤ n_chunks && n_chunks ≤ N "The number of chunks must be in [0,$(N)]"
 
         y = Array{Float64}(undef, n_chunks) # TODO Float64?

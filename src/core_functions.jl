@@ -465,6 +465,7 @@ function _mc(I::ModalInstance,
             # println("##→")
         end
     end
+    return H[hash(_antecedent(φ))][hash(I)][horizon][(1,2)]
 end
 
 function _mc(I::ModalInstance, φ::ClassificationRule; horizon::Int=4)
