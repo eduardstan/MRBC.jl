@@ -385,11 +385,12 @@ function _mc3(I::ModalInstance,
             #     end
             # end
             # H[hash(ψ)][hash(I)][horizon][(1,2)] = ⊔(S...)
-            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = ⊔(S...)
+            v = ⊔(S...)
+            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = v
                 # @show H[ψ][I][h][(1,2)]
             # end
             # println("##<G>")
-            return H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))]
+            return v
 
         elseif typeof(ψ.data) == UniversalIntervalRelation{:G}
             # println("#[G]")
@@ -404,11 +405,12 @@ function _mc3(I::ModalInstance,
                     push!(S, s)
                 end
             end
+            v = ⊓(S...)
             # H[hash(ψ)][hash(I)][horizon][(1,2)] = ⊓(S...)
-            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = ⊓(S...)
+            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = v
             # end
             # println("##[G]")
-            return H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))]
+            return v
 
         elseif typeof(ψ.data) <: AbstractExistentialIntervalRelation
             # println("#ex")
