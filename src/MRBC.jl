@@ -17,7 +17,7 @@ include("genetic_operators.jl")
 include("core_functions.jl")
 
 train = readARFF("data/RacketSports/RacketSports_TRAIN.arff");
-transform!(train,paa,1;n_chunks=5);
+# transform!(train,paa,1;n_chunks=10);
 
 # H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()
 
