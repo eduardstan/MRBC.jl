@@ -69,7 +69,7 @@ function mc(I::ModalInstance, φ::ClassificationRule; minh::Int=1, maxh::Int=4, 
     if !memo
         return _mc(I,φ; horizon)
     else 
-        return _mc(I,φ,H; minh=minh, maxh=maxh, horizon=horizon)
+        return _mc3(I,φ,H; minh=minh, maxh=maxh, horizon=horizon)
     end
 end
 
@@ -270,6 +270,216 @@ function _mc2(I::ModalInstance,
     end
 end
 
+function _mc3(I::ModalInstance, 
+    φ::ClassificationRule, 
+    H::Dict{Tuple{UInt, UInt, UInt, Tuple{UInt, UInt}}, Float64}; 
+    minh::Int=1,
+    maxh::Int=4,
+    horizon::Int=4)::Float64
+
+    # @show φ
+
+    if haskey(H, (hash(_antecedent(φ)), hash(I), hash(horizon), (hash(1), hash(2))))
+        return H[(hash(_antecedent(φ)), hash(I), hash(horizon), (hash(1), hash(2)))]
+    end
+    # # println("#1")
+    # if haskey(H, hash(_antecedent(φ))) && haskey(H[hash(_antecedent(φ))], hash(I)) && haskey(H[hash(_antecedent(φ))][hash(I)], horizon) && haskey(H[hash(_antecedent(φ))][hash(I)][horizon], (1,2))
+    #     # println("##1")
+    #     return H[hash(_antecedent(φ))][hash(I)][horizon][(1,2)]
+    # end
+
+    sub = _collect_sorted_subformulas(φ)
+    L = Dict{Tuple{UInt,NTuple{2,Int64}},Float64}()
+    N = length(I, 1)  # TODO works only on the first (1) frame, i.e., time series
+    intervals = [(x,y) for x in 1:N for y in 1:N if x < y && y-x+1 ≤ log2(N)]
+    for ψ in sub
+
+        # # Subformula already checked?
+        # if haskey(H, (hash(ψ), hash(I), hash(horizon), (hash(1), hash(2))))
+        #     continue
+        # end
+
+        # @show ψ
+
+        # println("#2")
+        # if haskey(H, hash(ψ)) && haskey(H[hash(ψ)],hash(I)) && haskey(H[hash(ψ)][hash(I)],horizon)
+        #     # println("##2")
+        #     continue
+        # end
+
+        # # println("#3")
+        # if !haskey(H, hash(ψ))
+        #     # println("##3")
+        #     H[hash(ψ)] = Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}()
+        #     H[hash(ψ)][hash(I)] = Dict{Int, Dict{NTuple{2,Int}, Float64}}()
+        #     for h in minh:maxh
+        #         # println("###3")
+        #         H[hash(ψ)][hash(I)][h] = Dict{NTuple{2,Int}, Float64}()
+        #     end
+        # else
+        #     # println("#4")
+        #     if !haskey(H[hash(ψ)], hash(I))
+        #         # println("##4")
+        #         H[hash(ψ)][hash(I)] = Dict{Int, Dict{NTuple{2,Int}, Float64}}()
+        #         for h in minh:maxh
+        #             # println("###4")
+        #             H[hash(ψ)][hash(I)][h] = Dict{NTuple{2,Int}, Float64}()
+        #         end
+        #     end
+        # end
+
+        if typeof(ψ.data) <: AbstractProposition
+            # println("#prop")
+            for (x, y) ∈ intervals 
+                v = f̃(ψ.data, I[1][ψ.data.A][x:y])
+                # for h in minh:maxh
+                L[(hash(ψ), (x, y))] = v
+                # end
+            end
+
+        elseif typeof(ψ.data) <: Float64
+            # println("#float")
+            for (x, y) ∈ intervals
+                # for h in minh:maxh
+                L[(hash(ψ), (x, y))] = ψ.data
+                # end
+            end
+
+        elseif typeof(ψ.data) == ExistentialIntervalRelation{:G}
+            # println("#<G>")
+            # for h in minh:maxh
+                # println("###<G>")
+            S = Float64[]
+            for op in [exIntRel(:L),exIntRel(:A),exIntRel(:O),exIntRel(:E),exIntRel(:D),exIntRel(:B),exIntRel(:InvL),exIntRel(:InvL),exIntRel(:InvA),exIntRel(:InvO),exIntRel(:InvE),exIntRel(:InvD),exIntRel(:InvB)]
+                # println("####<G>")
+                for (x, y) ∈ intervals
+                    # println("#####<G>")
+                    s = 0.0
+                    for (w, z) ∈ intervals
+                        # println("#######<G>")
+                        # @show H[ψ.right][I][h][(w,z)]
+                        # if !haskey(H, ψ.right)
+                        #     v = _mc(I,ψ.right,H; minh, maxh, horizon)
+                        # else
+                        #     v = H[ψ.right][I][h][(w,z)]
+                        # end
+                        # if !haskey(H, ψ.right)
+                        #     println("@@@@@ missing ψ.right = $(ψ.right) in H -- i = $i")
+                        #     sf = _collect_sorted_subformulas(φ)
+                        #     for ξ in sf
+                        #         @show (i,ξ)
+                        #     end
+                        # end
+                        s = ⊔(s, ⊓(R̃ₓ(op, (x, y), (w, z); horizon=horizon), L[(hash(ψ.right), (w, z))]))
+                    end
+
+                    push!(S, s)
+                end
+            end
+            # @show S
+            # if !haskey(H, hash(ψ))
+            #     println("@@@@@ missing ψ = $(ψ) in H -- i = $i")
+            #     sf = _collect_sorted_subformulas(φ)
+            #     for ξ in sf
+            #         @show ξ
+            #     end
+            # end
+            # H[hash(ψ)][hash(I)][horizon][(1,2)] = ⊔(S...)
+            v = ⊔(S...)
+            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = v
+                # @show H[ψ][I][h][(1,2)]
+            # end
+            # println("##<G>")
+            return v
+
+        elseif typeof(ψ.data) == UniversalIntervalRelation{:G}
+            # println("#[G]")
+            # for h in minh:maxh
+            S = Float64[]
+            for op in [univIntRel(:L),univIntRel(:A),univIntRel(:O),univIntRel(:E),univIntRel(:D),univIntRel(:B),univIntRel(:InvL),univIntRel(:InvA),univIntRel(:InvO),univIntRel(:InvE),univIntRel(:InvD),univIntRel(:InvB)]
+                for (x, y) ∈ intervals
+                    s = 1.0
+                    for (w, z) ∈ intervals
+                        s = ⊓(s, ↦(R̃ₓ(op, (x, y), (w, z); horizon=horizon), L[(hash(ψ.right), (w, z))]))
+                    end
+                    push!(S, s)
+                end
+            end
+            v = ⊓(S...)
+            # H[hash(ψ)][hash(I)][horizon][(1,2)] = ⊓(S...)
+            H[(hash(ψ), hash(I), hash(horizon), (hash(1), hash(2)))] = v
+            # end
+            # println("##[G]")
+            return v
+
+        elseif typeof(ψ.data) <: AbstractExistentialIntervalRelation
+            # println("#ex")
+            # for h in minh:maxh
+                # println("###ex")
+            for (x, y) ∈ intervals
+                # println("####ex")
+                s = 0.0
+                for (w, z) ∈ intervals
+                    # println("######ex")
+                    s = ⊔(s, ⊓(R̃ₓ(ψ.data, (x, y), (w, z); horizon=horizon), ⊓(L[(hash(ψ.left), (w, z))], L[(hash(ψ.right), (w, z))])))
+                end
+                # println("####ex")
+                # @show s
+                # @show typeof(s)
+                L[(hash(ψ), (x, y))] = s
+            end
+                # println("###ex")
+            # end
+            # println("##ex")
+
+        elseif typeof(ψ.data) <: AbstractUniversalIntervalRelation
+            # println("#univ")
+            # for h in minh:maxh
+            for (x, y) ∈ intervals
+                s = 1.0
+                for (w, z) ∈ intervals
+                    # @show H[ψ.left][I][h][(w,z)]
+                    # @show typeof(H[ψ.left][I][h][(w,z)])
+                    # @show H[ψ.right][I][h][(w,z)]
+                    # @show typeof(H[ψ.right][I][h][(w,z)])
+                    # @show R̃ₓ(ψ.data, (x, y), (w, z); horizon=h)
+                    # @show typeof(R̃ₓ(ψ.data, (x, y), (w, z); horizon=h))
+                    s = ⊓(s, ↦(R̃ₓ(ψ.data, (x, y), (w, z); horizon=horizon), ↦(L[(hash(ψ.left), (w, z))], L[(hash(ψ.right), (w, z))])))
+                end
+                L[(hash(ψ), (x, y))] = s
+            end
+            # end
+            # println("##univ")
+        elseif typeof(ψ.data) <: BinaryRelation{:∧}
+            # println("#∧")
+            # for h in minh:maxh
+                # println("###∧")
+            for (x, y) in intervals
+                # println("####∧")
+                L[(hash(ψ), (x, y))] = ⊓(L[(hash(ψ.left), (x, y))], L[(hash(ψ.right), (x, y))])
+            end
+            # end
+            # println("##∧")
+        elseif typeof(ψ.data) <: BinaryRelation{:→}
+            # println("#→")
+            # for h in minh:maxh
+                # println("###→")
+            for (x, y) in intervals
+                # println("####→")
+                # @show H[ψ.left][I][h][(x,y)]
+                # @show typeof(H[ψ.left][I][h][(x,y)])
+                # @show H[ψ.right][I][h][(x,y)]
+                # @show typeof(H[ψ.right][I][h][(x,y)])
+                # error(1)
+                L[(hash(ψ), (x, y))] = ↦(L[(hash(ψ.left), (x, y))], L[(hash(ψ.right), (x, y))])
+            end
+            # end
+            # println("##→")
+        end
+    end
+    return H[hash(_antecedent(φ))][hash(I)][horizon][(1,2)]
+end
+
 function _mc(I::ModalInstance, 
         φ::ClassificationRule, 
         H::Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}; 
@@ -465,6 +675,7 @@ function _mc(I::ModalInstance,
             # println("##→")
         end
     end
+    return H[hash(_antecedent(φ))][hash(I)][horizon][(1,2)]
 end
 
 function _mc(I::ModalInstance, φ::ClassificationRule; horizon::Int=4)
@@ -540,7 +751,7 @@ end
 function mmmc(ℐ::ClassificationDataset, Γ::ClassificationRules)
     accuracy = 0.0
 
-    for i in 1:length(ℐ.instances)
+    Threads.@threads for i in 1:length(ℐ.instances)
         I = ℐ.instances[i]
         class = ℐ.classes[i]
         L = Dict{ClassificationRule, Float64}() # ρ ↦ truth value
@@ -576,7 +787,7 @@ function init()
     init_relations  = [exIntRel(:G),univIntRel(:G)]
     prop_relations  = [conjunction, implication]
     relations       = vcat(ex_relations, univ_relations,prop_relations)
-    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=5,minnumrules=4,maxnumrules=12)
+    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=4,maxdepth=6,minnumrules=4,maxnumrules=48)
 end
 
 function hypervolume_indicator(y::Vector{Tuple{Float64,Float64}}; refpoint=(0,0))
