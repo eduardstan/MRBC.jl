@@ -1,5 +1,6 @@
 struct ModalInstance <: AbstractVector{SubDataFrame}
     # worlds::Set{<:AbstractOntology} # TODO add set of worlds, for the semantics (DT)
+    # A modal instance is defined on various frames. The variable rows indicates this scenario.
     rows::Vector{DataFrameRow}
 end
 
@@ -21,7 +22,7 @@ length(mi::ModalInstance, fid::Int) = max([length(mi[fid][i]) for i in 1:length(
 mutable struct ModalFrame <: AbstractVector{SubDataFrame}
     # name::String # TODO add name?
     dimension::Int  # (0=static, 1=timeseries, 2=images, ecc.)
-    data::DataFrame
+    data::DataFrame # original data
     views::Vector{DataFrameRow} # intraframe instances (i.e., first, second, .., series)
 end
 
@@ -57,7 +58,7 @@ end
 size(mf::ModalFrame) = (nrow(mf.data),)
 getindex(mf::ModalFrame, i::Int) = mf.views[i]
 
-struct ClassificationDataset
+mutable struct ClassificationDataset
     ldim::Int
     hdim::Int
     frames::Vector{ModalFrame}
@@ -140,12 +141,116 @@ end
 
 # TODO
 # possible test: all([auslan.instances[i].rows[1][attr] === auslan.frames[1].data[i,attr] for i in 1:length(auslan.instances) for attr in attributes(auslan, 1)])
-function transform!(ds::ClassificationDataset, f::Function, fid::Int; kwargs...)
+function transform!(ds::ClassificationDataset, fn::Function, fid::Int; kwargs...)
     for attr in attributes(ds, fid)
         for i in 1:nrow(ds.frames[fid].data)
-            ds.frames[fid].data[i,attr] = f(ds.frames[fid].data[i,attr]; kwargs...)
+            ds.frames[fid].data[i,attr] = fn(ds.frames[fid].data[i,attr]; kwargs...)
         end
     end
+    return ds
+end
+
+# TODO (?)
+# now it overrides the given frame, but in the future, for each f ∈ fns
+# should create a different frame
+function transform!(ds::ClassificationDataset, fid::Int, fns, kwargs)
+    d = Dict()
+    for (fnid, fn) in enumerate(fns)
+        for attr in attributes(ds, fid)
+            # for i in 1:nrow(ds.frames[fid].data)
+            new_attr_name = string(attr, "_", String(Symbol(kwargs[fnid][:f])))
+            # the value of each key (attribute) is an array of arrays, whose size is
+            # equal to the number of instances times the size of the length of the array
+            # returned by the function (fn)
+            d[new_attr_name] = [fn(ds.frames[fid].data[i,attr]; kwargs[fnid]...) for i in 1:nrow(ds.frames[fid].data)]
+            # end
+        end
+    end
+    df = DataFrame(d)
+
+    mf = ModalFrame(df)
+
+    modal_frames = ModalFrame[]
+
+    for i in 1:length(ds.frames)
+        # push the other unchanged modal frames
+        if i != fid
+            push!(modal_frames, ds.frames[i])
+        # push the newly created modal frame
+        else
+            push!(modal_frames, mf)
+        end
+    end
+
+    new_ds = ClassificationDataset(modal_frames, ds.classes)
+
+    # TODO: ugly to see, but it works
+    ds.classes = new_ds.classes
+    ds.domains = new_ds.domains
+    ds.frames = new_ds.frames
+    ds.hdim = new_ds.hdim
+    ds.instances = new_ds.instances
+    ds.ldim = new_ds.ldim
+    ds.unique_classes = new_ds.unique_classes
+
+    return ds
+end
+
+function my_f(ds::MRBC.ClassificationDataset, f::Function, fid::Int)
+    if f == paa
+        println("hey")
+    else
+        println(":(")
+    end
+end
+
+# julia> MRBC.train.frames[1].data[1,:A1]
+# 2-element Vector{Float64}:
+#  -3.4729
+#  -1.7941
+# [v for inst in eachrow(MRBC.train.frames[1].data) for v in inst[:A1][1]]
+
+# MRBC.train.frames[1][1] == MRBC.train.instances[1].rows[1] ==> true
+# assumption: works only if the instances have the same length (N)
+function flatten!(ds::ClassificationDataset, fid::Int) 
+    N = length(ds.instances[1], fid) # aforementioned assumption
+    @show N
+    d = Dict()
+    for attr in attributes(ds, fid)
+        for i in 1:N
+            new_attr_name = string(attr, "_", i)
+            # for new_attr_name set its value: an array having the i-th value of each instance
+            d[new_attr_name] = [v for inst in eachrow(ds.frames[1].data) for v in inst[attr][i]]
+        end
+    end
+
+    df = DataFrame(d)
+
+    mf = ModalFrame(df)
+
+    modal_frames = ModalFrame[]
+
+    for i in 1:length(ds.frames)
+        # push the other unchanged modal frames
+        if i != fid
+            push!(modal_frames, ds.frames[i])
+        # push the newly created modal frame
+        else
+            push!(modal_frames, mf)
+        end
+    end
+
+    new_ds = ClassificationDataset(modal_frames, ds.classes)
+
+    # TODO: ugly to see, but it works
+    ds.classes = new_ds.classes
+    ds.domains = new_ds.domains
+    ds.frames = new_ds.frames
+    ds.hdim = new_ds.hdim
+    ds.instances = new_ds.instances
+    ds.ldim = new_ds.ldim
+    ds.unique_classes = new_ds.unique_classes
+
     return ds
 end
 

@@ -43,7 +43,7 @@ function rules_mutation!(Γ::ClassificationRules)
         s = reduce(+,[_size(ν) for ν in nodes])
         w = [1 - _size(ν)/s for ν in nodes]./(length(nodes)-1)
         sf = StatsBase.sample(nodes, Weights(w))
-        #sf = nodes[rand(1:length(nodes))]
+        # sf = nodes[rand(1:length(nodes))]
 
         # upwards modal depth of the selected subformula
         umd = _upwards_md(sf)

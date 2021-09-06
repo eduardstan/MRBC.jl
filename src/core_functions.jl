@@ -291,7 +291,7 @@ function _mc3(I::ModalInstance,
     sub = _collect_sorted_subformulas(φ)
     L = Dict{Tuple{UInt,NTuple{2,Int64}},Float64}()
     N = length(I, 1)  # TODO works only on the first (1) frame, i.e., time series
-    intervals = [(x,y) for x in 1:N for y in 1:N if x < y && y-x+1 ≤ log2(N)]
+    intervals = [(x,y) for x in 1:N for y in 1:N if x < y] # && y-x+1 ≤ log2(N)] # && y-x+1 ≤ log2(N)]
     for ψ in sub
 
         # # Subformula already checked?
@@ -774,7 +774,7 @@ function mmmc(ℐ::ClassificationDataset, Γ::ClassificationRules)
 end
 
 function z(Γ::ClassificationRules)
-    round(mmmc(Γ.ds, Γ), digits=4), round(1 - _complexity(Γ)/_maxsize(Γ), digits=4) # 1 - sum(sizes)/(max_size*maxr) #1 - sum(sizes)/(max_size*100) # (mean_size(crules)/max_size) * (length(classes(td))/length(rules(crules))) # 1.0 - sum(sizes)/(max_size*12)
+    round(mmmc(Γ.ds, Γ), digits=4), 1.0 # round(1 - _complexity(Γ)/_maxsize(Γ), digits=4) # 1 - sum(sizes)/(max_size*maxr) #1 - sum(sizes)/(max_size*100) # (mean_size(crules)/max_size) * (length(classes(td))/length(rules(crules))) # 1.0 - sum(sizes)/(max_size*12)
 end
 
 function CV(Γ::ClassificationRules)
@@ -787,7 +787,7 @@ function init()
     init_relations  = [exIntRel(:G),univIntRel(:G)]
     prop_relations  = [conjunction, implication]
     relations       = vcat(ex_relations, univ_relations,prop_relations)
-    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=4,maxdepth=6,minnumrules=4,maxnumrules=48)
+    _rand_rules(init_relations,relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=5,minnumrules=4,maxnumrules=48)
 end
 
 function hypervolume_indicator(y::Vector{Tuple{Float64,Float64}}; refpoint=(0,0))
