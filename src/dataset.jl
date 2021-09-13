@@ -196,14 +196,6 @@ function transform!(ds::ClassificationDataset, fid::Int, fns, kwargs)
     return ds
 end
 
-function my_f(ds::MRBC.ClassificationDataset, f::Function, fid::Int)
-    if f == paa
-        println("hey")
-    else
-        println(":(")
-    end
-end
-
 # julia> MRBC.train.frames[1].data[1,:A1]
 # 2-element Vector{Float64}:
 #  -3.4729
@@ -463,7 +455,7 @@ function paa(x::AbstractArray{T} where T <: Real;
         end
         return y
     end
-end
+end 
 
 ######################################################
 const _ARFF_SPACE       = UInt8(' ')

@@ -1,4 +1,4 @@
-using MRBC; using Random; using NSGAII; using BenchmarkTools; using JLD2;
+using MRBC; using Random; using NSGAII; using BenchmarkTools; using JLD2; using Serialization;
 
 # global H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()
 
@@ -9,11 +9,13 @@ M = begin
     Random.seed!(1)
     # lk = Base.Threads.SpinLock()
     # @show H
-    @time M = nsga_max(8,100,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
+    @time M = nsga_max(2,5,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
     return M
 end
 
-@save "model.jld2" M
+# @save "model.jld2" M
+
+serialize("model.mm", M)
 
 # old version: H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()
 # 16.428 s (604568605 allocations: 12.88 GiB)

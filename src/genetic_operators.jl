@@ -23,7 +23,7 @@ function rules_mutation!(Γ::ClassificationRules)
         # add rule
         if rand(1:2) == 1
             if length(Γ) < Γ.maxnumrules
-                push!(_rules(Γ), _rand_rule(Γ.init_relations,Γ.relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd,maxmd=Γ.maxmd,maxdepth=Γ.maxdepth,isroot=true))
+                push!(_rules(Γ), _rand_rule(Γ.init_relations,Γ.relations,Γ.prop_relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd,maxmd=Γ.maxmd,maxdepth=Γ.maxdepth,isroot=true,isliteral=false))
             end
             return
         # remove rule
@@ -54,9 +54,10 @@ function rules_mutation!(Γ::ClassificationRules)
         udepth = _upwards_depth(sf)
 
         # new subtree
+        # EDU: control isliteral
         subtree = isdefined(sf, :parent) ?
-            _rand_antecedent(Γ.init_relations,Γ.relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd-umd,maxmd=Γ.maxmd-umd,maxdepth=Γ.maxdepth-udepth,isroot=false) :
-            _rand_antecedent(Γ.init_relations,Γ.relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd-umd,maxmd=Γ.maxmd-umd,maxdepth=Γ.maxdepth-udepth,isroot=true)
+            _rand_antecedent(Γ.init_relations,Γ.relations,Γ.prop_relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd-umd,maxmd=Γ.maxmd-umd,maxdepth=Γ.maxdepth-udepth,isroot=false,isliteral=true) :
+            _rand_antecedent(Γ.init_relations,Γ.relations,Γ.prop_relations,Γ.algebra,Γ.ds,Γ.orders;minmd=Γ.minmd-umd,maxmd=Γ.maxmd-umd,maxdepth=Γ.maxdepth-udepth,isroot=true,isliteral=true)
         # set parent node, if exists
         if isdefined(sf, :parent)
             if isdefined(sf.parent, :left) && sf.parent.left == sf
