@@ -9,7 +9,7 @@ M = begin
     Random.seed!(1)
     # lk = Base.Threads.SpinLock()
     # @show H
-    @time M = nsga_max(8,100,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
+    @time M = nsga_max(100,100,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
     return M
 end
 

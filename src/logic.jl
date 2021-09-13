@@ -301,33 +301,35 @@ function _print_antecedent(io::IO, ν::FormulaNode)
     if _datatype(ν) <: AbstractUniversalIntervalRelation # TODO: use traits to ask isexistential(ν) or isuniversal(ν)
         print(io, ν.data)
         print(io, "(")
-        if isdefined(ν, :left) && isdefined(ν, :right)
-            _print_antecedent(io, ν.left)
-            print(io, " ", implication, " ")
-            _print_antecedent(io, ν.right)
-        elseif isdefined(ν, :right)
-            _print_antecedent(io, ν.right)
-        end
+        # if isdefined(ν, :left) && isdefined(ν, :right)
+        #     _print_antecedent(io, ν.left)
+        #     print(io, " ", implication, " ")
+        #     _print_antecedent(io, ν.right)
+        # elseif isdefined(ν, :right)
+        #     _print_antecedent(io, ν.right)
+        # end
+        _print_antecedent(io, ν.right)
         print(io, ")")
         return
     elseif _datatype(ν) <: AbstractExistentialIntervalRelation # TODO
         print(io, ν.data)
         print(io, "(")
-        if isdefined(ν, :left) && isdefined(ν, :right)
-            _print_antecedent(io, ν.left)
-            print(io, " ", conjunction, " ")
-            _print_antecedent(io, ν.right)
-        elseif isdefined(ν, :right)
-            _print_antecedent(io, ν.right)
-        end
+        # if isdefined(ν, :left) && isdefined(ν, :right)
+        #     _print_antecedent(io, ν.left)
+        #     print(io, " ", conjunction, " ")
+        #     _print_antecedent(io, ν.right)
+        # elseif isdefined(ν, :right)
+        #     _print_antecedent(io, ν.right)
+        # end
+        _print_antecedent(io, ν.right)
         print(io, ")")
         return
     elseif _datatype(ν) <: AbstractBinaryRelation
-        print(io, "(")
+        # print(io, "(")
         _print_antecedent(io, ν.left)
         print(io, " ", ν.data, " ")
         _print_antecedent(io, ν.right)
-        print(io, ")")
+        # print(io, ")")
         return
     else
         print(io, ν.data)
@@ -377,6 +379,75 @@ show(io::IO, ν::FormulaNode) = _print_antecedent(io, ν)
 show(io::IO, ρ::ClassificationRule) = _print_rule(io, ρ)
 
 function _rand_antecedent(init_relations::Vector{<:AbstractRelation},
+    relations::Vector{<:AbstractRelation},
+    prop_relations::Vector{<:AbstractRelation},
+    algebra::Algebra,
+    ds::ClassificationDataset,
+    orders::Vector{Function};
+    minmd::Int=1,
+    maxmd::Int=3,
+    maxdepth::Int=4,
+    isroot::Bool=true,
+    isliteral::Bool=false)
+
+
+
+
+
+    if maxmd ≤ 0 || maxdepth ≤ 0 # || (rand() ≤ 0.2 && minmd ≤ 0) # maxmd ≤ 0 || maxdepth ≤ 0 | (rand() ≤ 0.2 && minmd ≤ 0) 
+
+        case = rand(1:100)
+        # Proposition case.
+        if case ≤ 90
+            return FormulaNode(_rand_proposition(length(attributes(ds)[1]),orders,ds.domains[1])) # TODO: works only for the first frame [1]
+        # Algebra value case.
+        else
+            return FormulaNode(rand(_domain(algebra)))
+        end
+    end
+
+    maxdepth = maxdepth - 1
+    case = rand(1:100) 
+
+    if isroot
+        root = FormulaNode(init_relations[rand(1:length(init_relations))])
+        minmd = minmd - 1
+        maxmd = maxmd - 1
+        maxdepth = maxdepth - 1
+        rchild = _rand_antecedent(init_relations,relations,prop_relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=false,isliteral=isliteral)
+        _right!(root, rchild)
+        _parent!(rchild, root)
+    else 
+        # Conjunction case
+        if case ≤ 70 && !isliteral
+            rel = prop_relations[rand(1:length(prop_relations))]
+            root = FormulaNode(rel)
+
+            lchild = _rand_antecedent(init_relations,relations,prop_relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=isroot,isliteral=false)
+            rchild = _rand_antecedent(init_relations,relations,prop_relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=isroot,isliteral=false)
+            _left!(root, lchild)
+            _right!(root, rchild)
+            _parent!(lchild, root)
+            _parent!(rchild, root)
+        # Literal case λ
+        else
+            rel = relations[rand(1:length(relations))]
+            root = FormulaNode(rel)
+            minmd = minmd - 1
+            maxmd = maxmd - 1
+
+            # lchild = _rand_antecedent(init_relations,relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=false)
+            rchild = _rand_antecedent(init_relations,relations,prop_relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=false,isliteral=true)
+            # _left!(root, lchild)
+            _right!(root, rchild)
+            # _parent!(lchild, root)
+            _parent!(rchild, root)
+        end
+    end
+    return root
+end
+
+function _rand_antecedent2(init_relations::Vector{<:AbstractRelation},
         relations::Vector{<:AbstractRelation},
         algebra::Algebra,
         ds::ClassificationDataset,
@@ -386,7 +457,7 @@ function _rand_antecedent(init_relations::Vector{<:AbstractRelation},
         maxdepth::Int=4,
         isroot::Bool=true)
 
-    if maxmd ≤ 0 || maxdepth ≤ 0 | (rand() ≤ 0.3 && minmd ≤ 0) # maxmd ≤ 0 || maxdepth ≤ 0 | (rand() ≤ 0.2 && minmd ≤ 0) 
+    if maxmd ≤ 0 || maxdepth ≤ 0 | (rand() ≤ 0.5 && minmd ≤ 0) # maxmd ≤ 0 || maxdepth ≤ 0 | (rand() ≤ 0.2 && minmd ≤ 0) 
         case = rand(1:100)
         # Proposition case.
         if case ≤ 90
@@ -438,14 +509,16 @@ end
 
 function _rand_rule(init_relations::Vector{<:AbstractRelation},
         relations::Vector{<:AbstractRelation},
+        prop_relations::Vector{<:AbstractRelation},
         algebra::Algebra,
         ds::ClassificationDataset,
         orders::Vector{Function};
         minmd::Int=1,
         maxmd::Int=3,
         maxdepth::Int=4,
-        isroot::Bool=true)
-    antecedent = _rand_antecedent(init_relations,relations,algebra,ds,orders;minmd,maxmd,maxdepth,isroot)
+        isroot::Bool=true,
+        isliteral::Bool=false)
+    antecedent = _rand_antecedent(init_relations,relations,prop_relations,algebra,ds,orders;minmd,maxmd,maxdepth,isroot,isliteral)
     consequent = _rand_consequent(ds.unique_classes)
     return ClassificationRule(antecedent,consequent)
 end
@@ -455,6 +528,7 @@ mutable struct ClassificationRules
     horizon::Int # TODO: works only for specific functions; for example, in the future, add α and β for sigmoid-like functions
     init_relations::Vector{<:AbstractRelation}
     relations::Vector{<:AbstractRelation}
+    prop_relations::Vector{<:AbstractRelation}
     algebra::Algebra
     ds::ClassificationDataset
     orders::Vector{Function}
@@ -488,6 +562,7 @@ copyto!(Γ::ClassificationRules, b::Base.Broadcast.Broadcasted) = copyto!(_rules
 
 function _rand_rules(init_relations::Vector{<:AbstractRelation},
     relations::Vector{<:AbstractRelation},
+    prop_relations::Vector{<:AbstractRelation},
     algebra::Algebra,
     ds::ClassificationDataset,
     orders::Vector{Function};
@@ -502,9 +577,9 @@ function _rand_rules(init_relations::Vector{<:AbstractRelation},
     rules = ClassificationRule[]
     horizon = rand(minh:maxh)
     for _ in 1:numrules
-        push!(rules, _rand_rule(init_relations,relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=true))
+        push!(rules, _rand_rule(init_relations,relations,prop_relations,algebra,ds,orders;minmd=minmd,maxmd=maxmd,maxdepth=maxdepth,isroot=true,isliteral=false))
     end
-    return ClassificationRules(rules,horizon,init_relations,relations,algebra,ds,orders,minmd,maxmd,minnumrules,maxnumrules,minh,maxh,maxdepth)
+    return ClassificationRules(rules,horizon,init_relations,relations,prop_relations,algebra,ds,orders,minmd,maxmd,minnumrules,maxnumrules,minh,maxh,maxdepth)
 end
 
 function _print_rules(io::IO, Γ::ClassificationRules)
