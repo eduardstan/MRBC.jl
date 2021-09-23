@@ -308,13 +308,9 @@ function _print_antecedent(io::IO, ν::FormulaNode)
         # elseif isdefined(ν, :right)
         #     _print_antecedent(io, ν.right)
         # end
-<<<<<<< HEAD
         # if isdefined(ν, :right)
         _print_antecedent(io, ν.right)
         # end
-=======
-        _print_antecedent(io, ν.right)
->>>>>>> dev_grammar
         print(io, ")")
         return
     elseif _datatype(ν) <: AbstractExistentialIntervalRelation # TODO
@@ -327,13 +323,9 @@ function _print_antecedent(io::IO, ν::FormulaNode)
         # elseif isdefined(ν, :right)
         #     _print_antecedent(io, ν.right)
         # end
-<<<<<<< HEAD
         # if isdefined(ν, :right)
         _print_antecedent(io, ν.right)
         # end
-=======
-        _print_antecedent(io, ν.right)
->>>>>>> dev_grammar
         print(io, ")")
         return
     elseif _datatype(ν) <: AbstractBinaryRelation

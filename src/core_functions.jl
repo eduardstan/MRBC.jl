@@ -291,11 +291,7 @@ function _mc3(I::ModalInstance,
     sub = _collect_sorted_subformulas(φ)
     L = Dict{Tuple{UInt,NTuple{2,Int64}},Float64}()
     N = length(I, 1)  # TODO works only on the first (1) frame, i.e., time series
-<<<<<<< HEAD
-    intervals = [(x,y) for x in 1:N for y in 1:N if x < y] # && y-x+1 ≤ log2(N)]
-=======
     intervals = [(x,y) for x in 1:N for y in 1:N if x < y && y-x+1 ≤ log2(N)]
->>>>>>> dev_grammar
     for ψ in sub
 
         # # Subformula already checked?
