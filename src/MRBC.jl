@@ -19,7 +19,11 @@ include("core_functions.jl")
 
 train = readARFF("data/RacketSports/RacketSports_TRAIN.arff");
 # train2 = readARFF("data/RacketSports/RacketSports_TRAIN.arff");
+<<<<<<< HEAD
 transform!(train,paa,1;n_chunks=5);
+=======
+# transform!(train,paa,1;n_chunks=5);
+>>>>>>> dev_grammar
 # transform!(train2, 1, [paa,paa], [(;n_chunks=2, f=mean),(;n_chunks=2, f=StatsBase.var)])
 
 # H = Dict{UInt, Dict{UInt, Dict{Int, Dict{NTuple{2,Int}, Float64}}}}()

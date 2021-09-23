@@ -9,7 +9,11 @@ M = begin
     Random.seed!(1)
     # lk = Base.Threads.SpinLock()
     # @show H
+<<<<<<< HEAD
     @time M = nsga_max(2,5,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
+=======
+    @time M = nsga_max(100,100,z,init,fCV=CV,fcross=rules_crossover!,fmut=rules_mutation!,pmut=0.3)
+>>>>>>> dev_grammar
     return M
 end
 
