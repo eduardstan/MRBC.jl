@@ -291,7 +291,7 @@ function _mc3(I::ModalInstance,
     sub = _collect_sorted_subformulas(φ)
     L = Dict{Tuple{UInt,NTuple{2,Int64}},Float64}()
     N = length(I, 1)  # TODO works only on the first (1) frame, i.e., time series
-    intervals = [(x,y) for x in 1:N for y in 1:N if x < y && y-x+1 ≤ log2(N)]
+    intervals = [(x,y) for x in 1:N for y in 1:N if x < y] # && y-x+1 ≤ log2(N)]
     for ψ in sub
 
         # # Subformula already checked?
@@ -795,7 +795,7 @@ function init()
     init_relations  = [exIntRel(:G),univIntRel(:G)]
     prop_relations  = [conjunction]
     relations       = vcat(ex_relations, univ_relations)
-    _rand_rules(init_relations,relations,prop_relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=10,minnumrules=4,maxnumrules=48)
+    _rand_rules(init_relations,relations,prop_relations,HeytingChainAlgebra,train,[≤,<,==,>,≥]; minh=1,maxh=3,maxmd=3,maxdepth=10,minnumrules=6,maxnumrules=24)
 end
 
 function hypervolume_indicator(y::Vector{Tuple{Float64,Float64}}; refpoint=(0,0))
